@@ -4,3 +4,4 @@ Thumbs.db
 *.pem
 .tmp-chrome/
 node_modules/
+website/dist/

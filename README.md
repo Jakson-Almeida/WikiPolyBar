@@ -40,7 +40,10 @@ Remap the extension commands at `chrome://extensions/shortcuts`.
 
 Language preferences are stored in Chrome sync storage. The extension does not collect analytics. Split view only frames official Wikipedia pages; framing is limited to subframes so normal Wikipedia browsing is unchanged.
 
-## Icons
+## Website
+
+Marketing site (React + Node) lives in `website/`. From that folder: `npm install`, then `npm run dev`.
+
 
 Toolbar icons and `extension/icons/favicon.ico` are generated with:
 
