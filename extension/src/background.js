@@ -37,8 +37,9 @@ async function ensureDefaults() {
     patch.languages = wikipolyDetectBrowserLanguages();
   }
   if (typeof stored.barVisible !== "boolean") patch.barVisible = true;
+  if (typeof stored.barMinimized !== "boolean") patch.barMinimized = false;
   if (typeof stored.shortcutsEnabled !== "boolean") patch.shortcutsEnabled = true;
-  if (typeof stored.syncScroll !== "boolean") patch.syncScroll = true;
+  if (typeof stored.syncScroll !== "boolean") patch.syncScroll = false;
   if (Object.keys(patch).length) await chrome.storage.sync.set(patch);
 }
 

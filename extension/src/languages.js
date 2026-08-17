@@ -50,8 +50,10 @@ const WIKIPOLY_LANGUAGES = {
 const WIKIPOLY_DEFAULTS = {
   languages: ["pt", "en", "es"],
   barVisible: true,
+  barMinimized: false,
+  barPosition: null,
   shortcutsEnabled: true,
-  syncScroll: true
+  syncScroll: false
 };
 
 function wikipolyNormalizeLang(code) {

@@ -52,6 +52,19 @@
   font-weight: 650;
   letter-spacing: -0.02em;
   color: var(--wpb-text);
+  cursor: grab;
+}
+
+.wpb-grip {
+  width: 12px;
+  height: 18px;
+  flex: 0 0 auto;
+  cursor: grab;
+  opacity: 0.55;
+  background-image: radial-gradient(circle, var(--wpb-muted) 1.15px, transparent 1.25px);
+  background-size: 6px 6px;
+  background-position: center;
+  touch-action: none;
 }
 
 .wpb-mark {
@@ -136,42 +149,216 @@
   margin-left: auto;
 }
 
+.wpb-winbtns {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  gap: 2px;
+  margin: -2px 0 -2px 4px;
+  padding: 2px 0 2px 6px;
+  border-left: 1px solid var(--wpb-line);
+  flex: 0 0 auto;
+}
+
+.wpb-winbtn {
+  appearance: none;
+  width: 18px;
+  height: 14px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: var(--wpb-bg-soft);
+  color: var(--wpb-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  line-height: 0;
+}
+
+.wpb-winbtn:hover {
+  background: var(--wpb-bg-soft);
+  color: var(--wpb-text);
+}
+
+.wpb-winbtn-close:hover {
+  background: var(--wpb-danger);
+  color: #fff;
+}
+
+.wpb-restore {
+  appearance: none;
+  border: 1px solid var(--wpb-line);
+  background: var(--wpb-bg);
+  color: var(--wpb-text);
+  border-radius: 10px;
+  padding: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--wpb-shadow);
+}
+
 .wpb-host {
   position: fixed;
   top: 56px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 2147483000;
-  width: min(720px, calc(100vw - 24px));
+  width: max-content;
+  max-width: calc(100vw - 16px);
   pointer-events: none;
+}
+
+.wpb-host.is-placed {
+  transform: none;
+}
+
+.wpb-host.is-dragging,
+.wpb-host.is-dragging .wpb-grip,
+.wpb-host.is-dragging .wpb-brand {
+  cursor: grabbing;
 }
 
 .wpb-host > * {
   pointer-events: auto;
 }
 
-.wpb-collapsed {
-  position: fixed;
-  top: 56px;
-  right: 16px;
-  left: auto;
-  transform: none;
-  width: auto;
+.wpb-bar-mini {
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 4px 4px 8px;
+  border-radius: 12px;
+  cursor: grab;
 }
 
-.wpb-fab {
-  appearance: none;
-  border: 1px solid var(--wpb-line);
+.wpb-bar-mini .wpb-winbtns {
+  margin: 0;
+  padding-left: 4px;
+}
+
+.wpb-mini-lang {
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--wpb-blue);
+}
+
+.wpb-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 2;
+  width: min(340px, calc(100vw - 24px));
+  max-height: min(70vh, 460px);
+  overflow: auto;
+  padding: 10px;
   background: var(--wpb-bg);
   color: var(--wpb-text);
-  border-radius: 999px;
-  padding: 6px 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font: 650 12px/1 var(--wpb-font);
-  cursor: pointer;
+  border: 1px solid var(--wpb-line);
+  border-radius: 10px;
   box-shadow: var(--wpb-shadow);
+  font-family: var(--wpb-font);
+  pointer-events: auto;
+}
+
+.wpb-menu.is-above {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+.wpb-menu-title {
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.wpb-menu-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--wpb-muted);
+  margin-bottom: 6px;
+}
+
+.wpb-menu-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--wpb-line);
+}
+
+.wpb-menu-row:last-child {
+  border-bottom: 0;
+}
+
+.wpb-menu-badge {
+  min-width: 32px;
+  padding: 2px 5px;
+  border-radius: 6px;
+  background: var(--wpb-blue-soft);
+  color: var(--wpb-blue);
+  font-weight: 700;
+  font-size: 10px;
+  text-align: center;
+}
+
+.wpb-menu-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+}
+
+.wpb-menu-name small {
+  display: block;
+  color: var(--wpb-muted);
+  font-size: 10px;
+}
+
+.wpb-menu-add {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0 10px;
+}
+
+.wpb-menu-select,
+.wpb-menu-addbtn {
+  font: inherit;
+  color: var(--wpb-text);
+  background: var(--wpb-bg-soft);
+  border: 1px solid var(--wpb-line);
+  border-radius: 7px;
+  padding: 5px 8px;
+}
+
+.wpb-menu-select {
+  flex: 1;
+  min-width: 0;
+}
+
+.wpb-menu-addbtn {
+  cursor: pointer;
+  font-weight: 650;
+  background: var(--wpb-blue);
+  border-color: var(--wpb-blue);
+  color: #fff;
+}
+
+.wpb-menu-addbtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.wpb-menu-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  margin-top: 6px;
+  cursor: pointer;
 }
 
 :host(.wpb-overlay) {

@@ -23,6 +23,8 @@
   let splitOpen = false;
   let syncLockUntil = 0;
   let lastHref = location.href;
+  let dragging = false;
+  let menuOpen = false;
 
   init().catch((err) => {
     console.warn("[WikiPoly Bar] init failed", err);
@@ -143,15 +145,62 @@
     if (!shadow) return;
     host.setAttribute("data-theme", wikiTheme());
     if (!settings.barVisible) {
-      shadow.innerHTML = "";
-      host.removeAttribute("class");
+      shadow.innerHTML = `<style>${cssText}</style>${restoreMarkup()}`;
+      bindRestore();
       return;
     }
     shadow.innerHTML = `<style>${cssText}</style>${barMarkup()}`;
     bindBar();
   }
 
+  function restoreMarkup() {
+    const placed = hasSavedPosition();
+    const hostClass = ["wpb-host", "is-minimized", placed ? "is-placed" : "is-centered"].join(" ");
+    return `
+      <div class="${hostClass}" part="bar">
+        <button type="button" class="wpb-restore" data-action="restore" title="Show WikiPoly Bar">
+          ${brandMark()}
+        </button>
+      </div>
+    `;
+  }
+
+  function bindRestore() {
+    const shell = shadow.querySelector(".wpb-host");
+    if (!shell) return;
+    applyBarPosition(shell);
+    bindDrag(shell);
+    const restoreBtn = shadow.querySelector("[data-action='restore']");
+    if (restoreBtn) {
+      restoreBtn.addEventListener("click", async () => {
+        settings.barVisible = true;
+        settings.barMinimized = false;
+        await chrome.storage.sync.set({ barVisible: true, barMinimized: false });
+        render();
+      });
+    }
+  }
+
   function barMarkup() {
+    const minimized = Boolean(settings.barMinimized);
+    const placed = hasSavedPosition();
+    const hostClass = ["wpb-host", minimized ? "is-minimized" : "", placed ? "is-placed" : "is-centered"]
+      .filter(Boolean)
+      .join(" ");
+
+    if (minimized) {
+      return `
+        <div class="${hostClass}" part="bar">
+          <div class="wpb-bar wpb-bar-mini" role="navigation" aria-label="WikiPoly Bar minimized">
+            <span class="wpb-grip" data-drag title="Drag to move" aria-hidden="true"></span>
+            ${brandMark()}
+            <span class="wpb-mini-lang">${escapeHtml((currentLang || "W").toUpperCase())}</span>
+            ${windowControlsMarkup("minimized")}
+          </div>
+        </div>
+      `;
+    }
+
     const langs = settings.languages || [];
     const buttons = langs
       .map((code, index) => {
@@ -172,9 +221,10 @@
     const splitReady = langs.filter((code) => langMap.has(code)).length >= 2;
 
     return `
-      <div class="wpb-host" part="bar">
+      <div class="${hostClass}" part="bar">
         <nav class="wpb-bar" role="navigation" aria-label="WikiPoly language switcher">
-          <div class="wpb-brand" title="WikiPoly Bar">
+          <span class="wpb-grip" data-drag title="Drag to move" aria-hidden="true"></span>
+          <div class="wpb-brand" data-drag title="Drag to move">
             ${brandMark()}
             <span>WikiPoly</span>
           </div>
@@ -184,43 +234,282 @@
               <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M1 2h6v12H1zm8 0h6v12H9z"/></svg>
               <span>Split view</span>
             </button>
-            <button type="button" class="wpb-iconbtn" data-action="hide" title="Hide bar">✕</button>
+            <button type="button" class="wpb-iconbtn" data-action="settings" title="Settings" aria-haspopup="true" aria-expanded="${menuOpen ? "true" : "false"}">
+              ${gearMark()}
+            </button>
+            ${windowControlsMarkup("expanded")}
           </div>
         </nav>
+        ${settingsMenuMarkup()}
       </div>
     `;
   }
 
   function bindBar() {
+    const shell = shadow.querySelector(".wpb-host");
+    if (!shell) return;
+    applyBarPosition(shell);
+    bindDrag(shell);
+
     shadow.querySelectorAll(".wpb-lang").forEach((button) => {
       button.addEventListener("click", () => switchToLang(button.dataset.lang));
     });
     const splitBtn = shadow.querySelector("[data-action='split']");
     if (splitBtn) splitBtn.addEventListener("click", () => toggleSplit());
-    const hideBtn = shadow.querySelector("[data-action='hide']");
-    if (hideBtn) {
-      hideBtn.addEventListener("click", async () => {
-        settings.barVisible = false;
-        await chrome.storage.sync.set({ barVisible: false });
-        render();
-        showFab();
+    const minimizeBtn = shadow.querySelector("[data-action='minimize']");
+    if (minimizeBtn) {
+      minimizeBtn.addEventListener("click", () => setMinimized(true));
+    }
+    const expandBtn = shadow.querySelector("[data-action='expand']");
+    if (expandBtn) {
+      expandBtn.addEventListener("click", () => setMinimized(false));
+    }
+    const closeBtn = shadow.querySelector("[data-action='close']");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", () => closeBar());
+    }
+    const settingsBtn = shadow.querySelector("[data-action='settings']");
+    if (settingsBtn) {
+      settingsBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        toggleMenu();
       });
     }
+    bindSettingsMenu();
+    if (menuOpen) showMenu();
   }
 
-  function showFab() {
-    shadow.innerHTML = `<style>${cssText}</style>
-      <div class="wpb-host wpb-collapsed">
-        <button type="button" class="wpb-fab" title="Show WikiPoly Bar">
-          ${brandMark()}
-          WikiPoly
-        </button>
-      </div>`;
-    shadow.querySelector(".wpb-fab").addEventListener("click", async () => {
-      settings.barVisible = true;
-      await chrome.storage.sync.set({ barVisible: true });
-      render();
+  function settingsMenuMarkup() {
+    const langs = settings.languages || [];
+    const rows = langs
+      .map((code, index) => {
+        const meta = WIKIPOLY_LANGUAGES[code];
+        const native = meta ? meta.native : code;
+        return `<div class="wpb-menu-row" data-code="${code}">
+          <span class="wpb-menu-badge">${code.toUpperCase()}</span>
+          <span class="wpb-menu-name">${escapeHtml(native)}<small>Alt+${index + 1}</small></span>
+          <button type="button" class="wpb-iconbtn" data-move="up" ${index === 0 ? "disabled" : ""} title="Move up">↑</button>
+          <button type="button" class="wpb-iconbtn" data-move="down" ${index === langs.length - 1 ? "disabled" : ""} title="Move down">↓</button>
+          <button type="button" class="wpb-iconbtn" data-remove title="Remove">✕</button>
+        </div>`;
+      })
+      .join("");
+    const remaining = Object.keys(WIKIPOLY_LANGUAGES).filter((code) => !langs.includes(code));
+    const options = remaining
+      .map((code) => `<option value="${code}">${escapeHtml(WIKIPOLY_LANGUAGES[code].native)} (${code})</option>`)
+      .join("");
+    return `
+      <div class="wpb-menu" hidden>
+        <div class="wpb-menu-title">Preferences</div>
+        <div class="wpb-menu-label">Preferred languages</div>
+        <div class="wpb-menu-list">${rows}</div>
+        <div class="wpb-menu-add">
+          <select class="wpb-menu-select" aria-label="Add a language">${options}</select>
+          <button type="button" class="wpb-menu-addbtn" data-add ${remaining.length ? "" : "disabled"}>Add</button>
+        </div>
+        <label class="wpb-menu-check">
+          <input type="checkbox" data-pref="shortcutsEnabled" ${settings.shortcutsEnabled ? "checked" : ""}>
+          Keyboard shortcuts
+        </label>
+        <label class="wpb-menu-check">
+          <input type="checkbox" data-pref="syncScroll" ${settings.syncScroll ? "checked" : ""}>
+          Sync split-view scroll
+        </label>
+      </div>
+    `;
+  }
+
+  function bindSettingsMenu() {
+    const menu = shadow.querySelector(".wpb-menu");
+    if (!menu) return;
+    menu.addEventListener("pointerdown", (event) => event.stopPropagation());
+    menu.querySelectorAll(".wpb-menu-row").forEach((row, index) => {
+      row.querySelector("[data-move='up']")?.addEventListener("click", () => moveLanguage(index, -1));
+      row.querySelector("[data-move='down']")?.addEventListener("click", () => moveLanguage(index, 1));
+      row.querySelector("[data-remove]")?.addEventListener("click", () => removeLanguage(index));
     });
+    const addBtn = menu.querySelector("[data-add]");
+    const addSelect = menu.querySelector(".wpb-menu-select");
+    if (addBtn && addSelect) {
+      addBtn.addEventListener("click", () => addLanguage(addSelect.value));
+    }
+    menu.querySelectorAll("input[data-pref]").forEach((input) => {
+      input.addEventListener("change", async () => {
+        const key = input.dataset.pref;
+        settings[key] = input.checked;
+        await chrome.storage.sync.set({ [key]: input.checked });
+      });
+    });
+  }
+
+  function toggleMenu() {
+    if (menuOpen) closeMenu();
+    else showMenu();
+  }
+
+  function showMenu() {
+    const menu = shadow.querySelector(".wpb-menu");
+    const button = shadow.querySelector("[data-action='settings']");
+    const shell = shadow.querySelector(".wpb-host");
+    if (!menu || !shell) return;
+    menuOpen = true;
+    menu.hidden = false;
+    if (button) button.setAttribute("aria-expanded", "true");
+    const bar = shell.querySelector(".wpb-bar");
+    const barRect = bar.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - barRect.bottom;
+    menu.classList.toggle("is-above", spaceBelow < 280 && barRect.top > spaceBelow);
+  }
+
+  function closeMenu() {
+    menuOpen = false;
+    const menu = shadow.querySelector(".wpb-menu");
+    const button = shadow.querySelector("[data-action='settings']");
+    if (menu) menu.hidden = true;
+    if (button) button.setAttribute("aria-expanded", "false");
+  }
+
+  async function persistLanguages(next) {
+    if (!next.length) return;
+    menuOpen = true;
+    settings.languages = next;
+    await chrome.storage.sync.set({ languages: next });
+    await fillMissingLangLinks();
+    render();
+  }
+
+  function moveLanguage(index, delta) {
+    const next = (settings.languages || []).slice();
+    const target = index + delta;
+    if (target < 0 || target >= next.length) return;
+    [next[index], next[target]] = [next[target], next[index]];
+    persistLanguages(next);
+  }
+
+  function removeLanguage(index) {
+    const next = (settings.languages || []).filter((_, i) => i !== index);
+    persistLanguages(next);
+  }
+
+  function addLanguage(code) {
+    if (!code || (settings.languages || []).includes(code)) return;
+    persistLanguages((settings.languages || []).concat(code));
+  }
+
+  function hasSavedPosition() {
+    const pos = settings.barPosition;
+    return Boolean(pos && Number.isFinite(pos.x) && Number.isFinite(pos.y));
+  }
+
+  function applyBarPosition(el) {
+    if (!hasSavedPosition()) return;
+    const pos = clampPosition(el, settings.barPosition.x, settings.barPosition.y);
+    el.style.left = `${pos.x}px`;
+    el.style.top = `${pos.y}px`;
+    el.style.right = "auto";
+    el.style.transform = "none";
+    el.classList.add("is-placed");
+    el.classList.remove("is-centered");
+  }
+
+  function clampPosition(el, x, y) {
+    const width = el.offsetWidth || 240;
+    const height = el.offsetHeight || 40;
+    const maxX = Math.max(8, window.innerWidth - width - 8);
+    const maxY = Math.max(8, window.innerHeight - height - 8);
+    return {
+      x: Math.min(Math.max(8, x), maxX),
+      y: Math.min(Math.max(8, y), maxY)
+    };
+  }
+
+  function bindDrag(el) {
+    let startX = 0;
+    let startY = 0;
+    let origX = 0;
+    let origY = 0;
+    let moved = false;
+
+    const onMove = (event) => {
+      if (!dragging) return;
+      const dx = event.clientX - startX;
+      const dy = event.clientY - startY;
+      if (Math.abs(dx) + Math.abs(dy) > 4) moved = true;
+      const next = clampPosition(el, origX + dx, origY + dy);
+      el.style.left = `${next.x}px`;
+      el.style.top = `${next.y}px`;
+      el.style.right = "auto";
+      el.style.transform = "none";
+      el.classList.add("is-placed", "is-dragging");
+      el.classList.remove("is-centered");
+    };
+
+    const onUp = async (event) => {
+      if (!dragging) return;
+      dragging = false;
+      el.classList.remove("is-dragging");
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      if (!moved) return;
+      event.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const next = clampPosition(el, rect.left, rect.top);
+      settings.barPosition = { x: Math.round(next.x), y: Math.round(next.y) };
+      await chrome.storage.sync.set({ barPosition: settings.barPosition });
+    };
+
+    el.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      const origin = event.target.closest("[data-drag], .wpb-grip, .wpb-brand, .wpb-bar-mini");
+      if (!origin) return;
+      if (event.target.closest("button, a, select, input")) return;
+      const rect = el.getBoundingClientRect();
+      dragging = true;
+      moved = false;
+      startX = event.clientX;
+      startY = event.clientY;
+      origX = rect.left;
+      origY = rect.top;
+      el.classList.add("is-dragging");
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp, { once: true });
+    });
+  }
+
+  async function setMinimized(next) {
+    menuOpen = false;
+    settings.barMinimized = Boolean(next);
+    await chrome.storage.sync.set({ barMinimized: settings.barMinimized });
+    render();
+  }
+
+  async function closeBar() {
+    menuOpen = false;
+    settings.barVisible = false;
+    await chrome.storage.sync.set({ barVisible: false });
+    render();
+  }
+
+  function windowControlsMarkup(mode) {
+    const top = mode === "minimized"
+      ? `<button type="button" class="wpb-winbtn" data-action="expand" title="Expand bar">${expandIcon()}</button>`
+      : `<button type="button" class="wpb-winbtn" data-action="minimize" title="Minimize bar">${minimizeIcon()}</button>`;
+    return `<div class="wpb-winbtns">
+      ${top}
+      <button type="button" class="wpb-winbtn wpb-winbtn-close" data-action="close" title="Close bar">${closeIcon()}</button>
+    </div>`;
+  }
+
+  function minimizeIcon() {
+    return `<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><rect x="1" y="4.4" width="8" height="1.2" rx="0.6" fill="currentColor"/></svg>`;
+  }
+
+  function expandIcon() {
+    return `<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" d="M2.2 5.8V2.2H5.8M7.8 4.2v3.6H4.2"/></svg>`;
+  }
+
+  function closeIcon() {
+    return `<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2.2 2.2l5.6 5.6M7.8 2.2L2.2 7.8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>`;
   }
 
   function switchToLang(code) {
@@ -374,9 +663,26 @@
       for (const [key, value] of Object.entries(changes)) {
         settings[key] = value.newValue;
       }
-      if (!splitOpen) render();
+      if (dragging || splitOpen) return;
+      if (Object.keys(changes).length === 1 && changes.barPosition) {
+        const shell = shadow?.querySelector(".wpb-host");
+        if (shell) applyBarPosition(shell);
+        return;
+      }
+      render();
     });
-    window.addEventListener("message", onFrameMessage);
+    window.addEventListener("resize", () => {
+      const shell = shadow?.querySelector(".wpb-host");
+      if (shell && hasSavedPosition()) applyBarPosition(shell);
+    });
+    window.addEventListener("pointerdown", (event) => {
+      if (!menuOpen || dragging) return;
+      const path = event.composedPath();
+      if (path.some((node) => node.classList && (node.classList.contains("wpb-menu") || node.matches?.("[data-action='settings']")))) {
+        return;
+      }
+      closeMenu();
+    }, true);
     window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
       if (!splitOpen) render();
     });
@@ -471,6 +777,12 @@
     return `<svg class="wpb-mark" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
       <rect width="16" height="16" rx="3.5" fill="#1B3A6B"/>
       <text x="8" y="11.2" text-anchor="middle" font-size="9" font-weight="700" font-family="system-ui,Segoe UI,sans-serif" fill="#fff">W</text>
+    </svg>`;
+  }
+
+  function gearMark() {
+    return `<svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 00.12-.64l-1.92-3.32a.5.5 0 00-.6-.22l-2.39.96a7.03 7.03 0 00-1.63-.94l-.36-2.54A.5.5 0 0013.9 1h-3.8a.5.5 0 00-.5.42l-.36 2.54c-.59.24-1.13.55-1.63.94l-2.39-.96a.5.5 0 00-.6.22L2.8 8.48a.5.5 0 00.12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L2.92 14.1a.5.5 0 00-.12.64l1.92 3.32c.12.22.37.3.6.22l2.39-.96c.5.39 1.04.7 1.63.94l.36 2.54c.05.24.26.42.5.42h3.8c.24 0 .45-.18.5-.42l.36-2.54c.59-.24 1.13-.55 1.63-.94l2.39.96c.23.08.48 0 .6-.22l1.92-3.32a.5.5 0 00-.12-.64l-2.03-1.58zM12 15.6A3.6 3.6 0 1112 8.4a3.6 3.6 0 010 7.2z"/>
     </svg>`;
   }
 

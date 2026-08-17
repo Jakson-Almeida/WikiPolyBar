@@ -182,6 +182,78 @@ try {
   await evaluate(
     ws,
     sessionId,
+    `document.getElementById("wikipoly-root").shadowRoot.querySelector("[data-action='minimize']").click()`
+  );
+  await waitFor(async () => {
+    const mini = await evaluate(
+      ws,
+      sessionId,
+      `(() => {
+        const root = document.getElementById("wikipoly-root").shadowRoot;
+        return {
+          mini: Boolean(root.querySelector(".wpb-bar-mini")),
+          controls: root.querySelectorAll(".wpb-winbtn").length,
+          hasClose: Boolean(root.querySelector("[data-action='close']")),
+          hasExpand: Boolean(root.querySelector("[data-action='expand']"))
+        };
+      })()`
+    );
+    if (!mini.mini) throw new Error("minimized chip missing");
+    if (!mini.hasClose || !mini.hasExpand || mini.controls !== 2) {
+      throw new Error(`window controls missing ${JSON.stringify(mini)}`);
+    }
+    return mini;
+  }, 8000, "minimize bar");
+  await screenshot("bar-minimized.png");
+  await evaluate(
+    ws,
+    sessionId,
+    `document.getElementById("wikipoly-root").shadowRoot.querySelector("[data-action='expand']").click()`
+  );
+  await waitFor(async () => {
+    const expanded = await evaluate(
+      ws,
+      sessionId,
+      `Boolean(document.getElementById("wikipoly-root").shadowRoot.querySelector("[data-action='minimize']"))`
+    );
+    if (!expanded) throw new Error("expanded bar missing");
+    return expanded;
+  }, 8000, "expand bar");
+
+  await evaluate(
+    ws,
+    sessionId,
+    `document.getElementById("wikipoly-root").shadowRoot.querySelector("[data-action='settings']").click()`
+  );
+  const prefs = await waitFor(async () => {
+    const info = await evaluate(
+      ws,
+      sessionId,
+      `(() => {
+        const menu = document.getElementById("wikipoly-root").shadowRoot.querySelector(".wpb-menu");
+        const sync = menu?.querySelector('input[data-pref="syncScroll"]');
+        return {
+          open: Boolean(menu) && !menu.hidden,
+          rows: menu ? menu.querySelectorAll(".wpb-menu-row").length : 0,
+          syncScroll: Boolean(sync?.checked)
+        };
+      })()`
+    );
+    if (!info.open) throw new Error("settings menu closed");
+    if (info.rows < 1) throw new Error("no language rows");
+    return info;
+  }, 8000, "settings menu");
+  if (prefs.syncScroll) fail("sync scroll should be off by default");
+  await screenshot("bar-settings.png");
+  await evaluate(
+    ws,
+    sessionId,
+    `document.getElementById("wikipoly-root").shadowRoot.querySelector("[data-action='settings']").click()`
+  );
+
+  await evaluate(
+    ws,
+    sessionId,
     `document.getElementById("wikipoly-root").shadowRoot.querySelector("[data-action='split']").click()`
   );
   const splitLayout = await waitFor(async () => {
