@@ -1,0 +1,96 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_extName__",
+  "short_name": "WikiPoly",
+  "version": "1.0.0",
+  "description": "__MSG_extDescription__",
+  "default_locale": "en",
+  "homepage_url": "https://github.com/Jakson-Almeida/WikiPolyBar",
+  "minimum_chrome_version": "108",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "__MSG_extName__",
+    "default_popup": "src/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "options_ui": {
+    "page": "src/options.html",
+    "open_in_tab": true
+  },
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.wikipedia.org/*"
+      ],
+      "exclude_matches": [
+        "*://www.wikipedia.org/*",
+        "*://*.wikipedia.org/wiki/Special:*",
+        "*://*.wikipedia.org/wiki/Especial:*",
+        "*://*.wikipedia.org/wiki/Spezial:*",
+        "*://*.wikipedia.org/wiki/Sp%C3%A9cial:*"
+      ],
+      "js": ["src/languages.js", "src/content.js"],
+      "run_at": "document_end",
+      "all_frames": true
+    }
+  ],
+  "permissions": [
+    "storage",
+    "commands",
+    "declarativeNetRequestWithHostAccess"
+  ],
+  "host_permissions": [
+    "*://*.wikipedia.org/*"
+  ],
+  "commands": {
+    "switch-lang-1": {
+      "suggested_key": {
+        "default": "Alt+Shift+1"
+      },
+      "description": "__MSG_cmdLang1__"
+    },
+    "switch-lang-2": {
+      "suggested_key": {
+        "default": "Alt+Shift+2"
+      },
+      "description": "__MSG_cmdLang2__"
+    },
+    "switch-lang-3": {
+      "suggested_key": {
+        "default": "Alt+Shift+3"
+      },
+      "description": "__MSG_cmdLang3__"
+    },
+    "toggle-split": {
+      "suggested_key": {
+        "default": "Alt+Shift+S"
+      },
+      "description": "__MSG_cmdSplit__"
+    },
+    "switch-lang-4": {
+      "description": "__MSG_cmdLang4__"
+    },
+    "switch-lang-5": {
+      "description": "__MSG_cmdLang5__"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["src/content.css"],
+      "matches": ["*://*.wikipedia.org/*"]
+    }
+  ]
+}

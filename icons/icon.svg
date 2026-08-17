@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="WikiPoly Bar">
+  <rect width="128" height="128" rx="28" fill="#1B3A6B"/>
+  <text x="64" y="78" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-weight="700" font-size="72" fill="#fff">W</text>
+  <rect x="32" y="92" width="12" height="8" rx="4" fill="#ECF2FA"/>
+  <rect x="49" y="92" width="12" height="8" rx="4" fill="#E8B923"/>
+  <rect x="66" y="92" width="12" height="8" rx="4" fill="#6D9EEB"/>
+  <rect x="83" y="92" width="12" height="8" rx="4" fill="#ECF2FA"/>
+</svg>

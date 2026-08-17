@@ -1,0 +1,26 @@
+{
+  "extName": {
+    "message": "WikiPoly Bar"
+  },
+  "extDescription": {
+    "message": "Instant Wikipedia language switcher and split-view comparator. One-click jumps between your languages, without leaving wikipedia.org."
+  },
+  "cmdLang1": {
+    "message": "Switch to preferred language 1"
+  },
+  "cmdLang2": {
+    "message": "Switch to preferred language 2"
+  },
+  "cmdLang3": {
+    "message": "Switch to preferred language 3"
+  },
+  "cmdLang4": {
+    "message": "Switch to preferred language 4"
+  },
+  "cmdLang5": {
+    "message": "Switch to preferred language 5"
+  },
+  "cmdSplit": {
+    "message": "Toggle split view"
+  }
+}

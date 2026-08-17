@@ -1,0 +1,26 @@
+{
+  "extName": {
+    "message": "WikiPoly Bar"
+  },
+  "extDescription": {
+    "message": "Seletor instantâneo de idiomas da Wikipédia e comparador em tela dividida. Troca com um clique, sem sair de wikipedia.org."
+  },
+  "cmdLang1": {
+    "message": "Mudar para o idioma preferido 1"
+  },
+  "cmdLang2": {
+    "message": "Mudar para o idioma preferido 2"
+  },
+  "cmdLang3": {
+    "message": "Mudar para o idioma preferido 3"
+  },
+  "cmdLang4": {
+    "message": "Mudar para o idioma preferido 4"
+  },
+  "cmdLang5": {
+    "message": "Mudar para o idioma preferido 5"
+  },
+  "cmdSplit": {
+    "message": "Abrir ou fechar a visão dividida"
+  }
+}

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>WikiPoly Bar settings</title>
+    <link rel="icon" href="../icons/favicon.ico">
+    <link rel="stylesheet" href="ui.css">
+  </head>
+  <body>
+    <main class="page">
+      <div class="hero">
+        <img src="../icons/icon48.png" alt="" width="48" height="48">
+        <div>
+          <h1>WikiPoly Bar</h1>
+          <p class="lead">One-click language switching on official Wikipedia, plus a same-tab split view for comparing editions.</p>
+        </div>
+      </div>
+
+      <section class="card">
+        <h2>Preferred languages</h2>
+        <p class="muted">Order matters. The first language is <kbd>Alt</kbd>+<kbd>1</kbd> / <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>1</kbd>.</p>
+        <div id="lang-list"></div>
+        <div class="add">
+          <select id="add-lang" aria-label="Add a language"></select>
+          <button type="button" class="primary" id="add-btn">Add language</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Behavior</h2>
+        <label class="row">
+          <span>Show floating bar on articles</span>
+          <input type="checkbox" id="bar-visible">
+        </label>
+        <label class="row">
+          <span>Enable keyboard shortcuts</span>
+          <input type="checkbox" id="shortcuts">
+        </label>
+        <label class="row">
+          <span>Sync scrolling in split view</span>
+          <input type="checkbox" id="sync-scroll">
+        </label>
+      </section>
+
+      <section class="card">
+        <h2>Shortcuts</h2>
+        <ul class="help">
+          <li><kbd>Alt</kbd>+<kbd>1</kbd> … <kbd>9</kbd> — jump to that preferred language when Chrome does not steal the key.</li>
+          <li><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>1</kbd> … <kbd>3</kbd> — same action, registered as extension commands.</li>
+          <li><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> — open or close split view.</li>
+          <li><kbd>Esc</kbd> — close split view.</li>
+        </ul>
+        <p class="muted">Remap commands in Chrome at chrome://extensions/shortcuts</p>
+      </section>
+
+      <section class="card">
+        <h2>Privacy</h2>
+        <p class="muted">WikiPoly Bar never sends your reading history anywhere. Language preferences stay in Chrome sync storage. Split view only frames official <code>*.wikipedia.org</code> pages. Unlike Wikiwand, you stay on Wikipedia and keep your account session on that edition.</p>
+      </section>
+    </main>
+    <script src="languages.js"></script>
+    <script src="settings-ui.js"></script>
+    <script src="options.js"></script>
+  </body>
+</html>

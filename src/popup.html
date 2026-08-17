@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>WikiPoly Bar</title>
+    <link rel="icon" href="../icons/favicon.ico">
+    <link rel="stylesheet" href="ui.css">
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="hero">
+        <img src="../icons/icon32.png" alt="">
+        <div>
+          <h1>WikiPoly Bar</h1>
+          <p>Instant Wikipedia language switcher</p>
+        </div>
+      </div>
+
+      <section class="card">
+        <h2>Preferred languages</h2>
+        <div id="lang-list"></div>
+        <div class="add">
+          <select id="add-lang" aria-label="Add a language"></select>
+          <button type="button" class="primary" id="add-btn">Add</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <label class="row">
+          <span>Show floating bar</span>
+          <input type="checkbox" id="bar-visible">
+        </label>
+        <label class="row">
+          <span>Keyboard shortcuts</span>
+          <input type="checkbox" id="shortcuts">
+        </label>
+        <label class="row">
+          <span>Sync split-view scroll</span>
+          <input type="checkbox" id="sync-scroll">
+        </label>
+      </section>
+
+      <p class="muted">
+        On Wikipedia, <kbd>Alt</kbd>+<kbd>1</kbd>… opens language 1.
+        Chrome on Windows often reserves those keys for tabs — use
+        <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>1</kbd> or remap in
+        chrome://extensions/shortcuts.
+      </p>
+
+      <div class="links">
+        <a href="options.html" target="_blank">Full settings</a>
+        <a href="https://github.com/Jakson-Almeida/WikiPolyBar" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+    <script src="languages.js"></script>
+    <script src="settings-ui.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

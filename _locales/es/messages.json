@@ -1,0 +1,26 @@
+{
+  "extName": {
+    "message": "WikiPoly Bar"
+  },
+  "extDescription": {
+    "message": "Cambio instantáneo de idioma en Wikipedia y comparador en vista dividida. Un clic, sin salir de wikipedia.org."
+  },
+  "cmdLang1": {
+    "message": "Cambiar al idioma preferido 1"
+  },
+  "cmdLang2": {
+    "message": "Cambiar al idioma preferido 2"
+  },
+  "cmdLang3": {
+    "message": "Cambiar al idioma preferido 3"
+  },
+  "cmdLang4": {
+    "message": "Cambiar al idioma preferido 4"
+  },
+  "cmdLang5": {
+    "message": "Cambiar al idioma preferido 5"
+  },
+  "cmdSplit": {
+    "message": "Activar o desactivar la vista dividida"
+  }
+}
