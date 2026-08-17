@@ -8,7 +8,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont, ImageChops
 
 ROOT = Path(__file__).resolve().parents[1]
-ICONS = ROOT / "icons"
+ICONS = ROOT / "extension" / "icons"
 SOURCE_CANDIDATES = [
     Path(r"C:\Users\DELL\.cursor\projects\c-Users-DELL-Documents-GitHub-WikiPolyBar\assets\wikipoly-icon-source.png"),
     ICONS / "icon-source.png",

@@ -1,5 +1,6 @@
 (() => {
   const ROOT_ID = "wikipoly-root";
+  const SPLIT_ID = "wikipoly-split-root";
   const MSG_SCROLL = "WIKIPOLY_SCROLL";
   const MSG_SCROLL_SET = "WIKIPOLY_SCROLL_SET";
 
@@ -17,6 +18,8 @@
   let cssText = "";
   let host = null;
   let shadow = null;
+  let splitHost = null;
+  let splitShadow = null;
   let splitOpen = false;
   let syncLockUntil = 0;
   let lastHref = location.href;
@@ -246,43 +249,88 @@
 
   function openSplit(leftLang, rightLang) {
     splitOpen = true;
-    const existing = shadow.querySelector(".split");
-    if (existing) existing.remove();
+    host?.classList.add("wpb-split-active");
+    ensureSplitHost();
+    splitHost.setAttribute("data-theme", wikiTheme());
+    splitHost.classList.add("wpb-overlay");
+    splitHost.style.cssText = [
+      "position:fixed",
+      "top:0",
+      "left:0",
+      "right:0",
+      "bottom:0",
+      "width:100vw",
+      "height:100vh",
+      "max-width:none",
+      "max-height:none",
+      "margin:0",
+      "padding:0",
+      "border:none",
+      "z-index:2147483646",
+      "display:block",
+      "background:#ffffff"
+    ].join(";");
 
-    const wrap = document.createElement("div");
-    wrap.className = "split";
-    wrap.innerHTML = `
-      <div class="split-toolbar">
-        <strong>Split view</strong>
-        ${langSelect("left", leftLang)}
-        <span class="split-vs">vs</span>
-        ${langSelect("right", rightLang)}
-        <label class="split-check">
-          <input type="checkbox" data-sync ${settings.syncScroll ? "checked" : ""}>
-          Sync scroll
-        </label>
-        <span class="split-grow"></span>
-        <button type="button" class="split-close" data-close>Close</button>
-      </div>
-      <div class="split-panes">
-        <iframe class="split-pane" data-pane="left" title="Left edition" src="${escapeAttr(frameUrl(leftLang))}"></iframe>
-        <iframe class="split-pane" data-pane="right" title="Right edition" src="${escapeAttr(frameUrl(rightLang))}"></iframe>
+    splitShadow.innerHTML = `
+      <style>${cssText}</style>
+      <div class="split" role="dialog" aria-label="Wikipedia split view">
+        <div class="split-toolbar">
+          <strong>Split view</strong>
+          ${langSelect("left", leftLang)}
+          <span class="split-vs">vs</span>
+          ${langSelect("right", rightLang)}
+          <label class="split-check">
+            <input type="checkbox" data-sync ${settings.syncScroll ? "checked" : ""}>
+            Sync scroll
+          </label>
+          <span class="split-grow"></span>
+          <button type="button" class="split-close" data-close>Close</button>
+        </div>
+        <div class="split-panes">
+          <div class="split-col" data-col="left">
+            <div class="split-loading">Loading ${escapeHtml((leftLang || "").toUpperCase())}…</div>
+            <iframe class="split-pane" data-pane="left" title="Left edition" src="${escapeAttr(frameUrl(leftLang))}"></iframe>
+          </div>
+          <div class="split-gutter" aria-hidden="true"></div>
+          <div class="split-col" data-col="right">
+            <div class="split-loading">Loading ${escapeHtml((rightLang || "").toUpperCase())}…</div>
+            <iframe class="split-pane" data-pane="right" title="Right edition" src="${escapeAttr(frameUrl(rightLang))}"></iframe>
+          </div>
+        </div>
       </div>
     `;
-    shadow.appendChild(wrap);
-    document.documentElement.style.overflow = "hidden";
 
-    wrap.querySelector("[data-close]").addEventListener("click", closeSplit);
-    wrap.querySelector("[data-sync]").addEventListener("change", async (event) => {
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+
+    splitShadow.querySelector("[data-close]").addEventListener("click", closeSplit);
+    splitShadow.querySelector("[data-sync]").addEventListener("change", async (event) => {
       settings.syncScroll = event.target.checked;
       await chrome.storage.sync.set({ syncScroll: settings.syncScroll });
     });
-    wrap.querySelectorAll("select").forEach((select) => {
+    splitShadow.querySelectorAll("select").forEach((select) => {
       select.addEventListener("change", () => {
-        const pane = wrap.querySelector(`iframe[data-pane='${select.dataset.side}']`);
+        const col = splitShadow.querySelector(`[data-col='${select.dataset.side}']`);
+        const pane = col.querySelector("iframe");
+        col.classList.remove("is-ready");
         pane.src = frameUrl(select.value);
       });
     });
+    splitShadow.querySelectorAll("iframe.split-pane").forEach((frame) => {
+      frame.addEventListener("load", () => {
+        frame.parentElement.classList.add("is-ready");
+      });
+    });
+  }
+
+  function ensureSplitHost() {
+    splitHost = document.getElementById(SPLIT_ID);
+    if (!splitHost) {
+      splitHost = document.createElement("div");
+      splitHost.id = SPLIT_ID;
+      document.documentElement.appendChild(splitHost);
+    }
+    splitShadow = splitHost.shadowRoot || splitHost.attachShadow({ mode: "open" });
   }
 
   function langSelect(side, selected) {
@@ -305,9 +353,14 @@
 
   function closeSplit() {
     splitOpen = false;
-    const wrap = shadow?.querySelector(".split");
-    if (wrap) wrap.remove();
+    host?.classList.remove("wpb-split-active");
+    if (splitHost) {
+      splitHost.remove();
+      splitHost = null;
+      splitShadow = null;
+    }
     document.documentElement.style.overflow = "";
+    document.body.style.overflow = "";
   }
 
   function bindEvents() {
@@ -373,7 +426,7 @@
     const data = event.data;
     if (!data || data.source !== "wikipoly" || data.type !== MSG_SCROLL) return;
     if (Date.now() < syncLockUntil) return;
-    const wrap = shadow.querySelector(".split");
+    const wrap = splitShadow;
     if (!wrap) return;
     const left = wrap.querySelector("iframe[data-pane='left']");
     const right = wrap.querySelector("iframe[data-pane='right']");

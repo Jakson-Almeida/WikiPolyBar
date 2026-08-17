@@ -10,6 +10,7 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+EXT = ROOT / "extension"
 ARTICLE = "https://en.wikipedia.org/wiki/Python_(programming_language)"
 API = (
     "https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*"
@@ -28,14 +29,14 @@ def fail(message: str) -> None:
 
 
 def check_manifest() -> None:
-    data = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
+    data = json.loads((EXT / "manifest.json").read_text(encoding="utf-8"))
     if data.get("manifest_version") != 3:
         fail("manifest_version must be 3")
     for size in (16, 32, 48, 128):
-        icon = ROOT / f"icons/icon{size}.png"
+        icon = EXT / f"icons/icon{size}.png"
         if not icon.exists():
             fail(f"missing {icon.name}")
-    if not (ROOT / "icons/favicon.ico").exists():
+    if not (EXT / "icons/favicon.ico").exists():
         fail("missing favicon.ico")
     required = [
         "src/background.js",
@@ -46,13 +47,13 @@ def check_manifest() -> None:
         "src/languages.js",
     ]
     for rel in required:
-        if not (ROOT / rel).exists():
+        if not (EXT / rel).exists():
             fail(f"missing {rel}")
     print("OK manifest and files")
 
 
 def check_js_syntax() -> None:
-    files = list((ROOT / "src").glob("*.js"))
+    files = list((EXT / "src").glob("*.js"))
     for path in files:
         result = subprocess.run(
             ["node", "--check", str(path)],

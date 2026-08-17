@@ -2,13 +2,14 @@
  * Load the unpacked extension in Chrome via CDP and confirm the bar injects.
  */
 import { spawn } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const EXT = join(ROOT, "extension");
 const CHROME = process.env.CHROME_PATH || "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const PORT = process.env.CDP_PORT || "9333";
 const ARTICLE = "https://en.wikipedia.org/wiki/Python_(programming_language)";
@@ -95,7 +96,7 @@ try {
     ws.addEventListener("error", () => reject(new Error("WebSocket error")), { once: true });
   });
 
-  const loaded = await cdp(ws, "Extensions.loadUnpacked", { path: ROOT });
+  const loaded = await cdp(ws, "Extensions.loadUnpacked", { path: EXT });
   if (!loaded.id) fail(`extension did not load: ${JSON.stringify(loaded)}`);
   console.log(`OK extension id ${loaded.id}`);
 
@@ -107,6 +108,31 @@ try {
   const sessionId = attached.sessionId;
   await cdp(ws, "Page.enable", {}, sessionId);
   await cdp(ws, "Runtime.enable", {}, sessionId);
+  try {
+    const win = await cdp(ws, "Browser.getWindowForTarget", { targetId: page.targetId });
+    await cdp(ws, "Browser.setWindowBounds", {
+      windowId: win.windowId,
+      bounds: { width: 1440, height: 900, windowState: "normal" }
+    });
+  } catch (_err) {
+    /* Window bounds are best-effort. */
+  }
+  await cdp(ws, "Emulation.setDeviceMetricsOverride", {
+    width: 1440,
+    height: 900,
+    deviceScaleFactor: 1,
+    mobile: false
+  }, sessionId);
+
+  const shotDir = join(ROOT, ".tmp-chrome");
+  mkdirSync(shotDir, { recursive: true });
+  async function screenshot(name) {
+    const shot = await cdp(ws, "Page.captureScreenshot", { format: "png", fromSurface: true }, sessionId);
+    const file = join(shotDir, name);
+    writeFileSync(file, Buffer.from(shot.data, "base64"));
+    console.log(`OK screenshot ${file}`);
+    return file;
+  }
   await cdp(ws, "Page.navigate", { url: ARTICLE }, sessionId);
   await waitFor(async () => {
     const href = await evaluate(ws, sessionId, "location.href");
@@ -151,25 +177,55 @@ try {
     fail(`expected EN or PT buttons, got ${JSON.stringify(injected.langs)}`);
   }
   if (injected.splitDisabled) fail("split view disabled on a multilingual article");
+  await screenshot("bar.png");
 
   await evaluate(
     ws,
     sessionId,
     `document.getElementById("wikipoly-root").shadowRoot.querySelector("[data-action='split']").click()`
   );
-  await waitFor(async () => {
-    const frames = await evaluate(
+  const splitLayout = await waitFor(async () => {
+    const info = await evaluate(
       ws,
       sessionId,
-      `document.getElementById("wikipoly-root").shadowRoot.querySelectorAll("iframe.split-pane").length`
+      `(() => {
+        const host = document.getElementById("wikipoly-split-root");
+        const shadow = host && host.shadowRoot;
+        const frames = shadow ? [...shadow.querySelectorAll("iframe.split-pane")] : [];
+        const hostBox = host ? host.getBoundingClientRect() : null;
+        return {
+          hasHost: Boolean(host),
+          frameCount: frames.length,
+          host: hostBox && { width: Math.round(hostBox.width), height: Math.round(hostBox.height) },
+          frames: frames.map((frame) => {
+            const box = frame.getBoundingClientRect();
+            return {
+              pane: frame.dataset.pane,
+              width: Math.round(box.width),
+              height: Math.round(box.height),
+              src: frame.src
+            };
+          })
+        };
+      })()`
     );
-    if (frames !== 2) throw new Error(`iframe count ${frames}`);
-    return frames;
-  }, 8000, "split view iframes");
+    if (!info.hasHost) throw new Error("split overlay missing");
+    if (info.frameCount !== 2) throw new Error(`iframe count ${info.frameCount}`);
+    if (!info.host || info.host.width < 1000 || info.host.height < 600) {
+      throw new Error(`overlay too small ${JSON.stringify(info.host)}`);
+    }
+    const tooSmall = info.frames.find((frame) => frame.width < 400 || frame.height < 500);
+    if (tooSmall) throw new Error(`pane too small ${JSON.stringify(tooSmall)}`);
+    return info;
+  }, 12000, "split view layout");
+
+  await delay(4000);
+  await screenshot("split.png");
+
   await evaluate(
     ws,
     sessionId,
-    `document.getElementById("wikipoly-root").shadowRoot.querySelector("[data-close]").click()`
+    `document.getElementById("wikipoly-split-root").shadowRoot.querySelector("[data-close]").click()`
   );
 
   await evaluate(
@@ -185,7 +241,8 @@ try {
 
   console.log(`OK bar on ${injected.href}`);
   console.log(`OK languages ${injected.langs.map((item) => item.lang + (item.current ? "*" : item.missing ? "-" : "")).join(", ")}`);
-  console.log("OK split view opened with two official Wikipedia frames");
+  console.log(`OK split overlay ${splitLayout.host.width}x${splitLayout.host.height}`);
+  console.log(`OK panes ${splitLayout.frames.map((frame) => `${frame.pane}:${frame.width}x${frame.height}`).join(" | ")}`);
   console.log(`OK switched to ${switched}`);
 } finally {
   if (ws && ws.readyState === WebSocket.OPEN) ws.close();

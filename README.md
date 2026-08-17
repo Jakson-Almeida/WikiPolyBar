@@ -19,7 +19,7 @@ Wikipedia’s Vector 2022 skin hid the language list behind a collapsible contro
 1. Open `chrome://extensions`
 2. Turn on **Developer mode**
 3. Click **Load unpacked**
-4. Select this folder (the one that contains `manifest.json`)
+4. Select the `extension` folder (the one that contains `manifest.json`)
 
 Pin the extension, then open any article such as [Python (programming language)](https://en.wikipedia.org/wiki/Python_(programming_language)). The bar appears under the site header. Click **PT**, **EN**, or **ES** to switch, or **Split view** to compare two editions.
 
@@ -42,7 +42,7 @@ Language preferences are stored in Chrome sync storage. The extension does not c
 
 ## Icons
 
-Toolbar icons and `icons/favicon.ico` are generated with:
+Toolbar icons and `extension/icons/favicon.ico` are generated with:
 
 ```
 python scripts/generate_icons.py

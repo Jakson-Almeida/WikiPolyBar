@@ -174,10 +174,31 @@
   box-shadow: var(--wpb-shadow);
 }
 
+:host(.wpb-overlay) {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  z-index: 2147483646 !important;
+  display: block !important;
+  background: var(--wpb-bg, #fff) !important;
+  pointer-events: auto !important;
+}
+
+:host(.wpb-split-active) .wpb-host {
+  display: none;
+}
+
 .split {
-  position: fixed;
-  inset: 0;
-  z-index: 2147483600;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
   background: var(--wpb-bg);
   color: var(--wpb-text);
   display: flex;
@@ -185,12 +206,19 @@
   font-family: var(--wpb-font);
 }
 
+.split *,
+.split *::before,
+.split *::after {
+  box-sizing: border-box;
+}
+
 .split-toolbar {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 44px;
-  padding: 6px 10px;
+  flex: 0 0 48px;
+  height: 48px;
+  padding: 0 12px;
   border-bottom: 1px solid var(--wpb-line);
   background: var(--wpb-bg-soft);
 }
@@ -206,17 +234,54 @@
 }
 
 .split-panes {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6px minmax(0, 1fr);
+  width: 100%;
+  height: calc(100% - 48px);
+}
+
+.split-col {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  overflow: hidden;
+}
+
+.split-gutter {
+  background: var(--wpb-line);
+  cursor: col-resize;
 }
 
 .split-pane {
-  min-width: 0;
-  min-height: 0;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   border: 0;
+  display: block;
   background: #fff;
+}
+
+.split-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--wpb-bg);
+  color: var(--wpb-muted);
+  font: 600 13px var(--wpb-font);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.split-col.is-ready .split-loading {
+  display: none;
 }
 
 .split-vs {
@@ -260,6 +325,10 @@
 
   .split-panes {
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr 1fr;
+    grid-template-rows: minmax(0, 1fr) 6px minmax(0, 1fr);
+  }
+
+  .split-gutter {
+    cursor: row-resize;
   }
 }
