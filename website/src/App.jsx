@@ -215,6 +215,8 @@ export default function App() {
           <a href={product.github} rel="noopener noreferrer">
             source on GitHub
           </a>
+          {" · "}
+          <a href="/privacy.html">privacy</a>
         </p>
       </footer>
     </>
