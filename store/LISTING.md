@@ -30,17 +30,37 @@ Screenshots (1280 x 800, 24-bit PNG, at least one)
 2. store/screenshots/02-preferences.png
 3. store/screenshots/03-split-view.png
 
-Single purpose
---------------
-Help people switch between language editions of the same Wikipedia article
-on official wikipedia.org pages.
+Privacy practices tab (paste these exactly)
+==========================================
 
-Permission justifications (paste if the dashboard asks)
--------------------------------------------------------
-storage — Save preferred languages, bar position, and display options on this device / Chrome sync.
-commands — Keyboard shortcuts to switch languages and open split view.
-declarativeNetRequestWithHostAccess — Allow official Wikipedia pages to load in the same-tab split view.
-Host permission *.wikipedia.org — Inject the language bar and open the matching article in other Wikipedia editions.
+Remote code
+-----------
+Select: No, I am not using remote code
+
+Data usage certification
+------------------------
+Check the box that you certify the data usage complies with the Developer Program Policies, then Save draft.
+
+
+Single purpose description
+--------------------------
+Switch between language editions of the same Wikipedia article on official wikipedia.org pages, using one-click buttons, shortcuts, and an optional same-tab split view.
+
+
+storage justification
+---------------------
+Used only to save the user's WikiPoly settings on this device and, if Chrome Sync is on, across their signed-in Chrome browsers. That includes preferred Wikipedia languages and order, whether the bar is shown or minimized, bar position, shortcut enablement, and split-view scroll-sync. The extension does not store browsing history, article content, or account credentials, and it does not send this data to our servers.
+
+
+declarativeNetRequestWithHostAccess justification
+-------------------------------------------------
+Used only so official Wikipedia pages can load inside the same-tab split view. Wikipedia blocks embedding with X-Frame-Options and Content-Security-Policy frame-ancestors. This permission removes those framing headers for sub_frame requests to wikipedia.org only. It does not rewrite top-level Wikipedia navigation, does not inject third-party scripts, and does not apply to any other site.
+
+
+Host permission justification
+-----------------------------
+Needed for *.wikipedia.org so the extension can run on official Wikipedia articles: show the language bar, read the page's language links (or call the Wikipedia API on the same site) to find matching editions, switch the tab to another language edition, and load those official pages in split view. The extension does not run on other websites and does not collect page content beyond what is required to offer those language links.
+
 
 
 Description (paste into the Description* box)
